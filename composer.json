@@ -1,0 +1,30 @@
+{
+  "name" : "mdespeuilles/backupmigratebundle",
+  "description" : "Backup  Restore Bundle",
+  "type" : "symfony-bundle",
+  "authors" : [{
+    "name" : "Maxence d'Espeuilles",
+    "email" : "mdespeuilles@openaccess.fr"
+  }],
+  "keywords" : [
+    "backup bundle"
+  ],
+  "license" : [
+    "MIT"
+  ],
+  "require" : {
+    "php": ">=7.0",
+    "backup-manager/backup-manager": "~1.0",
+    "digitaledgeit/compression": "dev-master"
+  },
+  "autoload" : {
+    "psr-4" : {
+      "Mdespeuilles\\BackupMigrateBundle\\" : ""
+    }
+  },
+  "extra" : {
+    "branch-alias" : {
+      "dev-master" : "1.0.0-dev"
+    }
+  }
+}
