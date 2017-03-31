@@ -15,7 +15,7 @@
   "require" : {
     "php": ">=7.0",
     "backup-manager/backup-manager": "~1.0",
-    "digitaledgeit/compression": "dev-master"
+    "digitaledgeit/compression": "~0.2.2"
   },
   "autoload" : {
     "psr-4" : {
