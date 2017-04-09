@@ -54,13 +54,13 @@ Run this command to start a backup :
 php bin/console bm:backup
 ```
 
-if your want to backup only database : 
+if you want to backup only database : 
 
 ```bash
 php bin/console bm:backup --database-only
 ```
 
-if your want to backup only files : 
+if you want to backup only files : 
 
 ```bash
 php bin/console bm:backup --files-only
@@ -74,13 +74,13 @@ Run this command to start a restore :
 php bin/console bm:restore
 ```
 
-if your want to restore only database : 
+if you want to restore only database : 
 
 ```bash
 php bin/console bm:restore --database-only
 ```
 
-if your want to restore only files : 
+if you want to restore only files : 
 
 ```bash
 php bin/console bm:restore --files-only
