@@ -26,6 +26,8 @@ class BackupCommand extends ContainerAwareCommand
         $this
             ->setName('bm:backup')
             ->setDescription('Backup databases and files.')
+            ->addOption('files-only', null, InputOption::VALUE_NONE, 'Backup only files', null)
+            ->addOption('database-only', null, InputOption::VALUE_NONE, 'Backup only database', null)
         ;
     }
 
@@ -33,53 +35,58 @@ class BackupCommand extends ContainerAwareCommand
     {
         $destination_path = $this->getContainer()->getParameter('mdespeuilles_backup_migrate.destination_path');
         $files_folder = $this->getContainer()->getParameter('mdespeuilles_backup_migrate.files_folder');
-        
-        $output->writeln('Start backup database');
-        $database = new Config([
-            'base' => [
-                'type' => 'mysql',
-                'host' => $this->getContainer()->getParameter('database_host'),
-                'port' => '3306',
-                'user' => $this->getContainer()->getParameter('database_user'),
-                'pass' => $this->getContainer()->getParameter('database_password'),
-                'database' => $this->getContainer()->getParameter('database_name'),
-                'singleTransaction' => false,
-                'ignoreTables' => [],
-            ]
-        ]);
-        
-        $storage = new Config([
-            'local' => [
-                'type' => 'Local',
-                'root' => $destination_path
-            ]
-        ]);
-        
-        $filesystems = new FilesystemProvider($storage);
-        $filesystems->add(new LocalFilesystem);
-        $database = new DatabaseProvider($database);
-        $database->add(new MysqlDatabase);
-        
-        $compressors = new CompressorProvider;
-        $compressors->add(new GzipCompressor);
-        
-        $manager = new Manager($filesystems, $database, $compressors);
-        
-        $fs = new Filesystem();
-        $fs->remove($destination_path . '/database.sql.gz');
     
-        $manager->makeBackup()->run('base', [new Destination('local', 'database.sql')], 'gzip');
-        $output->writeln('<info>Done !</info>');
+        $fs = new Filesystem();
         
-        $output->writeln('Start backup files');
-        
-        foreach ($files_folder as $key => $folder) {
-            $fs->remove($destination_path . "/" .$key.'.zip');
-            $jar = new ZipArchive($destination_path . '/'.$key.'.zip');
-            $jar->addFolder($folder['path'], $key)->close();
+        if (!$input->getOption('files-only')) {
+            $output->writeln('Start backup database');
+            $database = new Config([
+                'base' => [
+                    'type' => 'mysql',
+                    'host' => $this->getContainer()->getParameter('database_host'),
+                    'port' => '3306',
+                    'user' => $this->getContainer()->getParameter('database_user'),
+                    'pass' => $this->getContainer()->getParameter('database_password'),
+                    'database' => $this->getContainer()->getParameter('database_name'),
+                    'singleTransaction' => false,
+                    'ignoreTables' => [],
+                ]
+            ]);
+    
+            $storage = new Config([
+                'local' => [
+                    'type' => 'Local',
+                    'root' => $destination_path
+                ]
+            ]);
+    
+            $filesystems = new FilesystemProvider($storage);
+            $filesystems->add(new LocalFilesystem);
+            $database = new DatabaseProvider($database);
+            $database->add(new MysqlDatabase);
+    
+            $compressors = new CompressorProvider;
+            $compressors->add(new GzipCompressor);
+    
+            $manager = new Manager($filesystems, $database, $compressors);
+            
+            $fs->remove($destination_path . '/database.sql.gz');
+    
+            $manager->makeBackup()->run('base', [new Destination('local', 'database.sql')], 'gzip');
+            $output->writeln('<info>Done !</info>');
         }
     
-        $output->writeln('<info>Done !</info>');
+        if (!$input->getOption('database-only')) {
+            $output->writeln('Start backup files');
+    
+            foreach ($files_folder as $key => $folder) {
+                $fs->remove($destination_path . "/" .$key.'.zip');
+                $jar = new ZipArchive($destination_path . '/'.$key.'.zip');
+                $jar->addFolder($folder['path'], $key)->close();
+            }
+    
+            $output->writeln('<info>Done !</info>');
+        }
     }
 
 }
