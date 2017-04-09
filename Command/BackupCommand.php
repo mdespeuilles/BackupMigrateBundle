@@ -17,20 +17,24 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Filesystem\Filesystem;
 
-class OaRestoreCommand extends ContainerAwareCommand
+class BackupCommand extends ContainerAwareCommand
 {
     protected function configure()
     {
         $this
-            ->setName('oa:restore')
-            ->setDescription('...')
+            ->setName('bm:backup')
+            ->setDescription('Backup databases and files.')
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $output->writeln('Start restore database');
+        $destination_path = $this->getContainer()->getParameter('mdespeuilles_backup_migrate.destination_path');
+        $files_folder = $this->getContainer()->getParameter('mdespeuilles_backup_migrate.files_folder');
+        
+        $output->writeln('Start backup database');
         $database = new Config([
             'base' => [
                 'type' => 'mysql',
@@ -43,31 +47,39 @@ class OaRestoreCommand extends ContainerAwareCommand
                 'ignoreTables' => [],
             ]
         ]);
-    
+        
         $storage = new Config([
             'local' => [
                 'type' => 'Local',
-                'root' => $this->getContainer()->get('kernel')->getRootDir() . '/../private'
+                'root' => $destination_path
             ]
         ]);
-    
+        
         $filesystems = new FilesystemProvider($storage);
         $filesystems->add(new LocalFilesystem);
         $database = new DatabaseProvider($database);
         $database->add(new MysqlDatabase);
-    
+        
         $compressors = new CompressorProvider;
         $compressors->add(new GzipCompressor);
-    
-        $manager = new Manager($filesystems, $database, $compressors);
-    
-        $manager->makeRestore()->run('local', 'database.sql.gz', 'base', 'gzip');
-        $output->writeln('Done !');
         
-        $output->writeln('Start restore files');
-        $zip = new ZipArchive($this->getContainer()->get('kernel')->getRootDir() . '/../private/uploads.zip');
-        $zip->extractTo($this->getContainer()->get('kernel')->getRootDir() . '/../web');
-        $output->writeln('Done !');
+        $manager = new Manager($filesystems, $database, $compressors);
+        
+        $fs = new Filesystem();
+        $fs->remove($destination_path . '/database.sql.gz');
+    
+        $manager->makeBackup()->run('base', [new Destination('local', 'database.sql')], 'gzip');
+        $output->writeln('<info>Done !</info>');
+        
+        $output->writeln('Start backup files');
+        
+        foreach ($files_folder as $key => $folder) {
+            $fs->remove($destination_path . "/" .$key.'.zip');
+            $jar = new ZipArchive($destination_path . '/'.$key.'.zip');
+            $jar->addFolder($folder['path'], $key)->close();
+        }
+    
+        $output->writeln('<info>Done !</info>');
     }
 
 }

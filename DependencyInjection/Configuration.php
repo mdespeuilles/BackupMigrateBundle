@@ -18,7 +18,23 @@ class Configuration implements ConfigurationInterface
     public function getConfigTreeBuilder()
     {
         $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root('open_access_backup_migrate');
+        $rootNode = $treeBuilder->root('mdespeuilles_backup_migrate');
+        
+        $rootNode
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->scalarNode('destination_path')->defaultValue(null)->end()
+                ->arrayNode('files_folder')
+                    ->useAttributeAsKey('id')
+                    ->prototype('array')
+                        ->children()
+                            ->scalarNode('path')->defaultValue(null)->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end();
+        
+        
 
         // Here you should define the parameters that are allowed to
         // configure your bundle. See the documentation linked above for
