@@ -2,6 +2,7 @@
 
 namespace Mdespeuilles\BackupMigrateBundle\Command;
 
+use App\Kernel;
 use BackupManager\Compressors\CompressorProvider;
 use BackupManager\Compressors\GzipCompressor;
 use BackupManager\Config\Config;
@@ -40,14 +41,37 @@ class BackupCommand extends ContainerAwareCommand
         
         if (!$input->getOption('files-only')) {
             $output->writeln('Start backup database');
+            
+            $host = null;
+            $port = '3306';
+            $user = null;
+            $pass = null;
+            $database = null;
+            $type = 'mysql';
+
+            if (Kernel::VERSION_ID >= 40000) {
+                $host = parse_url(getenv('DATABASE_URL'), PHP_URL_HOST);
+                $type = parse_url(getenv('DATABASE_URL'), PHP_URL_SCHEME);
+                $port = parse_url(getenv('DATABASE_URL'), PHP_URL_PORT);
+                $user = parse_url(getenv('DATABASE_URL'), PHP_URL_USER);
+                $pass = parse_url(getenv('DATABASE_URL'), PHP_URL_PASS);
+                $database = str_replace("/", "", parse_url(getenv('DATABASE_URL'), PHP_URL_PATH));
+            }
+            else {
+                $host = $this->getContainer()->getParameter('database_host');
+                $user = $this->getContainer()->getParameter('database_user');
+                $pass = $this->getContainer()->getParameter('database_password');
+                $database = $this->getContainer()->getParameter('database_name');
+            }
+            
             $database = new Config([
                 'base' => [
-                    'type' => 'mysql',
-                    'host' => $this->getContainer()->getParameter('database_host'),
-                    'port' => '3306',
-                    'user' => $this->getContainer()->getParameter('database_user'),
-                    'pass' => $this->getContainer()->getParameter('database_password'),
-                    'database' => $this->getContainer()->getParameter('database_name'),
+                    'type' => $type,
+                    'host' => $host,
+                    'port' => $port,
+                    'user' => $user,
+                    'pass' => $pass,
+                    'database' => $database,
                     'singleTransaction' => false,
                     'ignoreTables' => [],
                 ]
